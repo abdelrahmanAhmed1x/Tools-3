@@ -1,0 +1,519 @@
+/* Shared dark palette for the workspace, authentication, and dialogs. */
+:root {
+  color-scheme: dark;
+  --canvas: #0c1219;
+  --surface: #131c26;
+  --surface-raised: #192431;
+  --surface-hover: #1d2c39;
+  --line: #293746;
+  --text: #e5edf4;
+  --secondary: #b0becc;
+  --muted: #8d9eae;
+  --accent: #70d8b9;
+  --accent-soft: #173a34;
+  --color-muted: var(--muted);
+  background: var(--canvas);
+  color: var(--text);
+}
+body {
+  background: var(--canvas);
+}
+input,
+textarea,
+select,
+.search-input input,
+.table-tools input {
+  background: #0e1721;
+  color: var(--text);
+  border-color: var(--line);
+}
+input::placeholder,
+textarea::placeholder,
+.auth-form input::placeholder {
+  color: #7e91a3;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline-color: var(--accent);
+  border-color: var(--accent);
+}
+button:focus-visible,
+a:focus-visible {
+  outline-color: var(--accent);
+}
+label {
+  color: var(--secondary);
+}
+.button-primary {
+  background: var(--accent);
+  color: #092b24;
+  box-shadow: none;
+}
+.button-primary:hover {
+  background: #99e8d0;
+  box-shadow: 0 4px 18px #70d8b91a;
+}
+.button-secondary {
+  background: var(--surface-raised);
+  border-color: var(--line);
+  color: var(--text);
+}
+.button-secondary:hover {
+  background: var(--surface-hover);
+  border-color: #496074;
+}
+.button-danger {
+  background: #a53c47;
+  color: #fff;
+}
+.button-danger:hover {
+  background: #bd4d59;
+}
+.icon-button,
+.password-input button {
+  color: var(--muted);
+}
+.icon-button:hover,
+.modal-heading > .icon-button {
+  background: var(--surface-hover);
+  color: var(--accent);
+}
+.text-link,
+.contact-link,
+.auth-switch button,
+.banner-copy button,
+.brand-period {
+  color: var(--accent);
+}
+.brand,
+.brand-light {
+  color: var(--text);
+}
+.brand-icon {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.brand-light .brand-icon {
+  background: #70d8b911;
+  border-color: #70d8b933;
+  color: var(--accent);
+}
+.brand-light .brand-period {
+  color: var(--accent);
+}
+.error-message {
+  background: #341f29;
+  border-color: #663744;
+  color: #ffb3b5;
+}
+.notice {
+  background: var(--accent-soft);
+  color: #afe9d9;
+}
+.eyebrow,
+.page-heading .eyebrow,
+.text-muted,
+.field-help,
+.nav-label,
+.workspace-label small,
+.sidebar-profile small,
+.topbar-date,
+.topbar-date svg,
+.breadcrumb,
+.breadcrumb svg,
+.page-heading p,
+.stat-top,
+.stat-card > p,
+.stat-card > p svg,
+.panel-heading p,
+.table-footer,
+.overview-footnote,
+.overview-footnote svg,
+.page-footer,
+.search-input,
+.table-loading,
+.empty p,
+.auth-description,
+.auth-switch,
+.auth-note,
+.auth-copyright,
+.modal-heading p,
+.detail-summary > span:last-child,
+.detail-meta,
+.route-detail small,
+.detail-card > p.text-muted,
+.timeline-item small,
+.assignment-row small,
+.courier-card > p,
+.courier-workload,
+.account-content dt,
+.account-note,
+.illustration-caption {
+  color: var(--muted);
+}
+.auth-layout,
+.sidebar,
+.stat-card,
+.shipments-panel,
+.modal,
+.toast,
+.account-card {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.auth-form-side {
+  background: var(--canvas);
+}
+.auth-story {
+  background: linear-gradient(155deg, #102f2b, #101c28 80%);
+  color: var(--text);
+}
+.auth-story-content .eyebrow,
+.auth-story-content > p,
+.auth-story-footer {
+  color: #a0c9bf;
+}
+.auth-form-wrap > h2,
+.page-heading h1,
+.stat-card > strong,
+.panel-heading h2,
+.modal-heading h2,
+.empty h3,
+.account-content h2,
+.courier-card h3,
+.history-section h3,
+.detail-card h3 {
+  color: var(--text);
+}
+.auth-note {
+  border-color: var(--line);
+}
+.auth-note > span,
+.auth-form-side:before {
+  background: var(--accent);
+}
+.illustration-pin {
+  background: #1c3c37;
+  color: var(--accent);
+  border-color: #376055;
+}
+.illustration-box {
+  background: #366255;
+  color: #c6ecdc;
+  border-color: #4b7e6b;
+  box-shadow: 12px 14px 0 #0003;
+}
+.box-tape {
+  background: #284d43;
+  border-color: #56816b;
+}
+.box-label {
+  background: #a4c9b8;
+}
+.box-label span {
+  background: #517b67;
+}
+.sidebar,
+.workspace-label,
+.sidebar-profile,
+.topbar,
+.table-tools,
+th,
+td,
+.table-footer,
+.page-footer,
+.modal-footer,
+.detail-actions,
+.assignment-row,
+.courier-workload,
+.account-note {
+  border-color: var(--line);
+}
+.workspace-avatar,
+.table-package,
+.count-chip,
+.assignment-status,
+.role-chip {
+  background: var(--surface-raised);
+  border-color: var(--line);
+  color: var(--secondary);
+}
+.nav-item {
+  color: var(--secondary);
+}
+.nav-item:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.nav-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.nav-count {
+  background: #29544a;
+  color: #b8efdf;
+}
+.sidebar-tip {
+  background: #14242a;
+  border-color: #2a4146;
+}
+.sidebar-tip p {
+  color: var(--muted);
+}
+.tip-icon {
+  color: var(--accent);
+}
+.avatar,
+.account-avatar {
+  background: #23483f;
+  color: #b8eddb;
+  border-color: var(--surface);
+}
+.topbar {
+  background: #101923;
+}
+.breadcrumb strong {
+  color: var(--secondary);
+}
+.stat-card,
+.shipments-panel {
+  box-shadow: 0 2px 8px #0000000a;
+}
+.stat-card:hover {
+  border-color: #4c776c;
+  box-shadow: 0 4px 18px #0002;
+}
+.stat-icon {
+  background: #263544;
+  color: #b5c8d7;
+}
+.stat-blue .stat-icon {
+  background: #1b3249;
+  color: #8bc4f0;
+}
+.stat-green .stat-icon {
+  background: #1d3a32;
+  color: #8bd9b0;
+}
+.stat-amber .stat-icon {
+  background: #3c3221;
+  color: #e6c078;
+}
+.overview-banner {
+  background: linear-gradient(110deg, #16372f, #142730);
+  border-color: #2b4b42;
+}
+.banner-copy h2 {
+  color: #d7f5e8;
+}
+.banner-copy .eyebrow {
+  color: #8fc5b1;
+}
+.banner-copy p {
+  color: #a3c0b8;
+}
+.banner-ring,
+.banner-ring:after {
+  border-color: #3d5d5022;
+}
+.banner-package {
+  background: #26493f;
+  border-color: #416d59;
+  color: #a3d5b7;
+  box-shadow: 7px 9px 0 #0002;
+}
+.mini-route span {
+  border-color: #7fb998;
+  box-shadow: 0 0 0 7px #6fb58b11;
+}
+.mini-route i {
+  border-color: #6caa86;
+}
+.banner-sticker {
+  background: #1d362d;
+  border-color: #3b5e49;
+  color: #b8d4bc;
+}
+th {
+  background: #101923;
+  color: #91a6b9;
+}
+td,
+.table-route > span,
+.person-cell,
+.delivery-date {
+  color: var(--secondary);
+}
+tbody tr:hover {
+  background: #182532;
+}
+.shipment-id {
+  color: var(--text);
+}
+.shipment-id:hover strong {
+  color: var(--accent);
+}
+.shipment-id small,
+.table-time,
+.table-route > span:last-child {
+  color: var(--muted);
+}
+.table-route i,
+.live-note > span {
+  background: #83ab9e;
+}
+.table-route > span:last-child i {
+  background: var(--accent);
+}
+.badge-pending {
+  background: #342c1c;
+  border-color: #59472a;
+  color: #efd08a;
+}
+.badge-picked_up {
+  background: #2e2644;
+  border-color: #4c3d6c;
+  color: #c7b2f4;
+}
+.badge-in_transit {
+  background: #1a3044;
+  border-color: #2c4d68;
+  color: #95ccf4;
+}
+.badge-delivered {
+  background: #1b382d;
+  border-color: #315e49;
+  color: #91dfb3;
+}
+.badge-cancelled {
+  background: #37232a;
+  border-color: #5e3a45;
+  color: #eeacb9;
+}
+.awaiting {
+  color: #efd08a;
+}
+.page-footer strong {
+  color: var(--accent);
+}
+.pagination .icon-button {
+  border-color: var(--line);
+}
+.empty-icon {
+  background: var(--surface-raised);
+  border-color: var(--line);
+  color: var(--accent);
+}
+.modal-backdrop,
+.sidebar-scrim {
+  background: #03080eb3;
+}
+.modal {
+  border: 1px solid var(--line);
+  box-shadow: 0 25px 100px #0008;
+}
+.form-section-label {
+  color: #a7c5b8;
+}
+.step {
+  color: var(--muted);
+}
+.step:before,
+.timeline-item:before {
+  background: var(--line);
+}
+.step > span {
+  background: var(--surface-raised);
+  border-color: var(--line);
+}
+.step.complete {
+  color: var(--accent);
+}
+.step.complete > span {
+  background: var(--accent-soft);
+  border-color: #3b7564;
+}
+.step.complete:before {
+  background: #3b7564;
+}
+.detail-card {
+  background: #111c26;
+  border-color: var(--line);
+}
+.detail-card > p,
+.route-detail p,
+.timeline-item p,
+.assignment-row p {
+  color: var(--secondary);
+}
+.route-point,
+.timeline-dot {
+  border-color: var(--accent);
+}
+.route-point.destination,
+.timeline-dot.delivered {
+  background: var(--accent);
+}
+.route-connector {
+  color: #57736b;
+}
+.timeline-dot {
+  background: var(--surface);
+}
+.danger-link,
+.danger-link:hover {
+  color: #f0a6ab;
+}
+.confirm-box {
+  background: #302128;
+  border-color: #644047;
+}
+.confirm-box > p {
+  color: #f0b7bc;
+}
+.toast {
+  color: var(--text);
+  box-shadow: 0 5px 30px #0005;
+}
+.toast > span {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.courier-card {
+  background: var(--surface-raised);
+  border-color: var(--line);
+}
+.courier-avatar {
+  background: #24473b;
+  color: #a2ddbc;
+}
+.courier-avatar.color-1 {
+  background: #253e54;
+  color: #a1cbea;
+}
+.courier-avatar.color-2 {
+  background: #453b27;
+  color: #e0c58f;
+}
+.courier-card > a,
+.courier-workload strong {
+  color: var(--accent);
+}
+.account-cover {
+  background: repeating-linear-gradient(
+    125deg,
+    #1d3836,
+    #1d3836 28px,
+    #203d3b 28px,
+    #203d3b 55px
+  );
+}
+.account-content dd {
+  color: var(--text);
+}
+@media (max-width: 700px) {
+  .banner-art {
+    opacity: 0.65;
+  }
+}

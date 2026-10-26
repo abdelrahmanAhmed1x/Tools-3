@@ -1,0 +1,1607 @@
+{
+  "info": {
+    "name": "Tools Project - API Showcase",
+    "description": "A short student presentation collection: 31 requests, one test per request, covering all 22 versioned API/health endpoints. The original Package-Tracking collection remains the comprehensive test suite.\n\nSetup: apply backend migrations with just goose-up, start the API, import this collection, then run the ENTIRE collection in order with one iteration. base_url defaults to http://localhost:8082. No environment file is needed; avoid environment variables overriding these collection variables. Seeded admin1 and courier1 @tracking.test use Assignment123!.\n\nThe first request generates a unique customer email and a delivery time 48 hours ahead. Login and creation requests save their tokens and IDs automatically. Each request has one small test for its expected status and main result. An unexpected HTTP status stops the runner. The shared cookie jar is disabled because the requests use bearer authentication.\n\nThe workflow creates three shipments, demonstrates delivery, customer cancellation, courier decline, and admin cancellation, inspects tracking/assignment history, then deletes only those three shipments. The newly registered customer remains because there is no user-deletion endpoint. A failed or interrupted run may leave its own shipments; use the saved IDs in the cleanup folder. Seeded inspection shipments are not changed.\n\nRun the setup folders before sending later requests individually. Repeat status updates only in the supported order: pending -> picked_up -> in_transit -> delivered. The last request clears the locally saved tokens; server-issued bearer tokens expire normally.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "customer_password",
+      "value": "StudentPassword123!",
+      "type": "string"
+    },
+    {
+      "key": "demo_password",
+      "value": "Assignment123!",
+      "type": "string"
+    },
+    {
+      "key": "admin_email",
+      "value": "admin1@tracking.test",
+      "type": "string"
+    },
+    {
+      "key": "courier_email",
+      "value": "courier1@tracking.test",
+      "type": "string"
+    },
+    {
+      "key": "showcase_email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "delivery_time",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "courier_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "courier_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "delivery_order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cancel_order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "decline_order_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Setup and sign in",
+      "item": [
+        {
+          "name": "01 - Check server health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"showcase_email\", \"student.\" + pm.variables.replaceIn(\"{{$guid}}\") + \"@example.test\");",
+                  "pm.collectionVariables.set(\"delivery_time\", new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString());",
+                  "[\"user_token\", \"admin_token\", \"courier_token\", \"courier_id\", \"delivery_order_id\", \"cancel_order_id\", \"decline_order_id\"].forEach(function (key) {",
+                  "  pm.collectionVariables.unset(key);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Check server health\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().status).to.eql(\"ok\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "02 - Register a customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Showcase Student\",\n  \"email\": \"{{showcase_email}}\",\n  \"phone\": \"01012345678\",\n  \"password\": \"{{customer_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Register a customer\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "});",
+                  "if (pm.response.code !== 201) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "03 - Sign in as customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{showcase_email}}\",\n  \"password\": \"{{customer_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sign in as customer\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.user.role).to.eql(\"user\");",
+                  "  pm.expect(data.token).to.be.a(\"string\").and.not.empty;",
+                  "  pm.collectionVariables.set(\"user_token\", data.token);",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "04 - Sign in as admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{demo_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sign in as admin\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.user.role).to.eql(\"admin\");",
+                  "  pm.expect(data.token).to.be.a(\"string\").and.not.empty;",
+                  "  pm.collectionVariables.set(\"admin_token\", data.token);",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "05 - Sign in as courier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{courier_email}}\",\n  \"password\": \"{{demo_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sign in as courier\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.user.role).to.eql(\"courier\");",
+                  "  pm.expect(data.token).to.be.a(\"string\").and.not.empty;",
+                  "  pm.collectionVariables.set(\"courier_token\", data.token);",
+                  "  pm.collectionVariables.set(\"courier_id\", String(data.user.id));",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "06 - View customer profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"View customer profile\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.email).to.eql(pm.collectionVariables.get(\"showcase_email\"));",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Customer shipments",
+      "item": [
+        {
+          "name": "07 - Book a delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_location\": \"18 Talaat Harb Street, Downtown Cairo\",\n  \"dropoff_location\": \"42 Street 9, Maadi\",\n  \"package_details\": \"Books and a notebook. Keep dry.\",\n  \"delivery_time\": \"{{delivery_time}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Book a delivery\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.id).to.be.a(\"number\").above(0);",
+                  "  pm.collectionVariables.set(\"delivery_order_id\", String(pm.response.json().data.id));",
+                  "});",
+                  "if (pm.response.code !== 201) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Book a shipment to cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_location\": \"18 Talaat Harb Street, Downtown Cairo\",\n  \"dropoff_location\": \"42 Street 9, Maadi\",\n  \"package_details\": \"Office supplies. Customer cancellation example.\",\n  \"delivery_time\": \"{{delivery_time}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Book a shipment to cancel\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.id).to.be.a(\"number\").above(0);",
+                  "  pm.collectionVariables.set(\"cancel_order_id\", String(pm.response.json().data.id));",
+                  "});",
+                  "if (pm.response.code !== 201) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "09 - Book a shipment for courier decline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_location\": \"18 Talaat Harb Street, Downtown Cairo\",\n  \"dropoff_location\": \"42 Street 9, Maadi\",\n  \"package_details\": \"Small gift box. Courier decline example.\",\n  \"delivery_time\": \"{{delivery_time}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Book a shipment for courier decline\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.id).to.be.a(\"number\").above(0);",
+                  "  pm.collectionVariables.set(\"decline_order_id\", String(pm.response.json().data.id));",
+                  "});",
+                  "if (pm.response.code !== 201) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "10 - List customer shipments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"List customer shipments\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data).to.be.an(\"array\").with.lengthOf(3);",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "11 - View a shipment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/orders/{{delivery_order_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"View a shipment\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.status).to.eql(\"pending\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Admin review and assignment",
+      "item": [
+        {
+          "name": "12 - List all shipments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"List all shipments\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data).to.be.an(\"array\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "13 - View shipment as admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders/{{delivery_order_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"View shipment as admin\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get(\"delivery_order_id\")));",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "14 - List couriers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/couriers",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"List couriers\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data).to.be.an(\"array\").and.not.empty;",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "15 - Assign delivery courier",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders/{{delivery_order_id}}/courier",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courier_id\": {{courier_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Assign delivery courier\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.courier_id).to.eql(Number(pm.collectionVariables.get(\"courier_id\")));",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Courier delivery",
+      "item": [
+        {
+          "name": "16 - List assigned deliveries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/courier/orders",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{courier_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"List assigned deliveries\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  const orders = pm.response.json().data || [];",
+                  "  pm.expect(orders.some(function (order) { return order.order_id === Number(pm.collectionVariables.get(\"delivery_order_id\")); })).to.eql(true);",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "17 - Accept assignment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/courier/orders/{{delivery_order_id}}/accept",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{courier_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Accept assignment\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.assignment_status).to.eql(\"accepted\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "18 - Confirm pickup",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/courier/orders/{{delivery_order_id}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{courier_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"picked_up\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Confirm pickup\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.status).to.eql(\"picked_up\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "19 - Mark in transit",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/courier/orders/{{delivery_order_id}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{courier_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_transit\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Mark in transit\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.status).to.eql(\"in_transit\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "20 - Confirm delivery",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/courier/orders/{{delivery_order_id}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{courier_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"delivered\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Confirm delivery\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.status).to.eql(\"delivered\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Tracking and history",
+      "item": [
+        {
+          "name": "21 - View customer tracking history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/orders/{{delivery_order_id}}/history",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"View customer tracking history\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.map(function (entry) { return entry.new_status; })).to.eql([\"picked_up\", \"in_transit\", \"delivered\"]);",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "22 - View admin tracking history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders/{{delivery_order_id}}/history",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"View admin tracking history\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data).to.be.an(\"array\").with.lengthOf(3);",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "23 - View courier assignment history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders/{{delivery_order_id}}/assignments",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"View courier assignment history\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data[0].assignment_status).to.eql(\"accepted\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Cancellation and decline",
+      "item": [
+        {
+          "name": "24 - Customer cancels pending shipment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/orders/{{cancel_order_id}}/cancel",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Customer cancels pending shipment\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.status).to.eql(\"cancelled\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "25 - Assign another pending shipment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders/{{decline_order_id}}/courier",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courier_id\": {{courier_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Assign another pending shipment\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "26 - Courier declines assignment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/courier/orders/{{decline_order_id}}/decline",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{courier_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Courier declines assignment\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.assignment_status).to.eql(\"declined\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "27 - Admin cancels declined shipment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders/{{decline_order_id}}/status",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"cancelled\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin cancels declined shipment\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "  pm.expect(pm.response.json().data.status).to.eql(\"cancelled\");",
+                  "});",
+                  "if (pm.response.code !== 200) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Cleanup and sign out",
+      "item": [
+        {
+          "name": "28 - Delete delivered demo shipment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders/{{delivery_order_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Deletes only the shipment created by this showcase run, including its history and assignments."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Delete delivered demo shipment\", function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});",
+                  "if (pm.response.code !== 204) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "29 - Delete customer-cancelled demo shipment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders/{{cancel_order_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Deletes only the shipment created by this showcase run, including its history and assignments."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Delete customer-cancelled demo shipment\", function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});",
+                  "if (pm.response.code !== 204) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "30 - Delete admin-cancelled demo shipment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/admin/orders/{{decline_order_id}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Deletes only the shipment created by this showcase run, including its history and assignments."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Delete admin-cancelled demo shipment\", function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});",
+                  "if (pm.response.code !== 204) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        },
+        {
+          "name": "31 - Sign out customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/v1/auth/logout",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "The backend clears its session cookie. Bearer tokens remain valid until expiry; remove saved tokens locally."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sign out customer\", function () {",
+                  "  pm.response.to.have.status(204);",
+                  "  [\"user_token\", \"admin_token\", \"courier_token\"].forEach(function (key) { pm.collectionVariables.unset(key); });",
+                  "});",
+                  "if (pm.response.code !== 204) pm.execution.setNextRequest(null);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+version: "2"
+
+sql:
+  - name: "courier"
+    engine: "mysql"
+
+    schema: "../../../migrations"
+    queries:
+      - "queries/courier.sql"
+      - "../../orders/internal/queries/orders.sql"
+      - "../../Auth/internal/queries/auth.sql"
+
+    strict_function_checks: true
+    strict_order_by: true
+
+    gen:
+      go:
+        package: "sqlc"
+        out: "sqlc"
+        sql_package: "database/sql"
+
+        emit_interface: true
+        emit_empty_slices: true
+        omit_unused_structs: true
+        emit_json_tags: false

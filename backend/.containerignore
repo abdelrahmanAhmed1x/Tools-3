@@ -1,0 +1,10 @@
+.env
+.env.*
+.git
+.gitignore
+*.json
+*.md
+*.test
+*.out
+Containerfile
+compose.yaml
