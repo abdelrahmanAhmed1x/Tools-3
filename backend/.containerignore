@@ -8,3 +8,6 @@
 *.out
 Containerfile
 compose.yaml
+tmp
+bin
+*.exe

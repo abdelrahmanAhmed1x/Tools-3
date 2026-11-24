@@ -7,3 +7,4 @@ dist
 *.md
 *.tsbuildinfo
 Containerfile
+coverage

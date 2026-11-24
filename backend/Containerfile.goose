@@ -10,7 +10,8 @@ RUN apk add --no-cache ca-certificates \
 WORKDIR /app
 COPY --from=build /go/bin/goose /usr/local/bin/goose
 COPY internal/migrations ./migrations
+COPY start-migrate.sh /usr/local/bin/start-migrate.sh
 USER app
 ENV GOOSE_DRIVER=mysql GOOSE_MIGRATION_DIR=/app/migrations
-ENTRYPOINT ["/usr/local/bin/goose"]
+ENTRYPOINT ["/bin/sh", "/usr/local/bin/start-migrate.sh"]
 CMD ["up"]
